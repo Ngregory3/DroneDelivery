@@ -80,26 +80,18 @@ def main():
     print("running...")
     drone = tello.Tello()
     drone.connect()
+    drone.takeoff()
     flying = True
     input_pattern = "^\s*-?\d+\s*,\s*-?\d+\s*,\s*-?\d+\s*$"
 
     while flying:
-        #Check battery and temperature
+        #Check battery
         battery_percent = drone.get_battery()
 
         if (battery_percent > 5):
             print("Drone battery {}%".format(battery_percent))
         else:
             print("Terminating script, battery at {}%".format(battery_percent))
-            flying = False
-            break
-            
-        temperature = drone.get_temperature()
-
-        if (temperature < 37):
-            print("Drone temperature: {} C".format(temperature))
-        else:
-            print("Drone temperature too hot({}C), cool off the drone".format(temperature))
             flying = False
             break
 
@@ -124,7 +116,7 @@ def main():
         if valid_point:
             move_stack = generate_func_list(x,y,z)
             print(move_stack)
-            success = execute_funcs(move_stack)
+            success = execute_funcs(drone, move_stack)
             if not success:
                 print("Failed to execute path")
                 flying = False
