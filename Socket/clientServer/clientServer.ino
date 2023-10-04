@@ -1,0 +1,75 @@
+#include <SPI.h>
+#include <Arduino.h>
+#include <WiFi.h>
+
+
+const char* ssid = "GTother";
+const char* password = "GeorgeP@1927";
+
+WiFiServer server(23);
+boolean alreadyConnected = false;
+
+String get_wifi_status(int status){
+    switch(status){
+        case WL_IDLE_STATUS:
+        return "WL_IDLE_STATUS";
+        case WL_SCAN_COMPLETED:
+        return "WL_SCAN_COMPLETED";
+        case WL_NO_SSID_AVAIL:
+        return "WL_NO_SSID_AVAIL";
+        case WL_CONNECT_FAILED:
+        return "WL_CONNECT_FAILED";
+        case WL_CONNECTION_LOST:
+        return "WL_CONNECTION_LOST";
+        case WL_CONNECTED:
+        return "WL_CONNECTED";
+        case WL_DISCONNECTED:
+        return "WL_DISCONNECTED";
+    }
+}
+
+void setup(){
+    Serial.begin(115200);
+    delay(1000);
+    int status = WL_IDLE_STATUS;
+    Serial.println("\nConnecting");
+    Serial.println(get_wifi_status(status));
+    WiFi.begin(ssid, password);
+    while(status != WL_CONNECTED){
+        delay(500);
+        status = WiFi.status();
+        Serial.println(get_wifi_status(status));
+    }
+
+    Serial.println("\nConnected to the WiFi network");
+    Serial.print("Local ESP32 IP: ");
+    Serial.println(WiFi.localIP());
+    // Serial.print(", MAC: ");
+    // Serial.println(WiFi.macAddress());
+
+    server.begin();
+}
+
+void loop(){
+  WiFiClient client = server.available();
+  if (client) {
+    if (!alreadyConnected) {
+        // clead out the input buffer:
+        client.flush();
+        Serial.println("We have a new client");
+        client.println("Hello, client!");
+        alreadyConnected = true;
+    }
+    Serial.println(client.available());
+    if (client.available() > 0) {
+      // read the bytes incoming from the client:
+      char thisChar = client.read();
+      // echo the bytes back to the client:
+      server.write(thisChar);
+      // echo the bytes to the server as well:
+      Serial.write(thisChar);
+    }
+  } else {
+    Serial.println("no client");
+  }
+}
