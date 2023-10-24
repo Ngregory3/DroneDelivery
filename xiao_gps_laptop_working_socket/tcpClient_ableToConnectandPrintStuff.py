@@ -32,7 +32,10 @@ while True:
     data = s.recv(1024)
     if data:
         print('Received', repr(data))
-
+        received_data = repr(data).split()
+        fix = received_data[0]
+        latitude = received_data[1][:-2]
+        longitude = received_data[2][:-2]
 
 
 '''
@@ -47,8 +50,6 @@ while True:
     print ('received data: ',data.decode())
     print ('data recieved from: ',addr)
 '''
-
-
 
 # Close the socket
 s.close()
