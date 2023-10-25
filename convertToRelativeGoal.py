@@ -1,12 +1,16 @@
 import math
 
+#Sources
+#https://www.google.com/search?q=convert+decimal+minutes+to+decimal+degrees&sca_esv=576533920&rlz=1C1CHBF_enUS856US856&sxsrf=AM9HkKkDQtQS7-VGS5PpWV2uOHrI7qlA6Q%3A1698253853531&ei=HUw5ZfH0H6CsqtsP4e2YEA&oq=convert+decimal+minutes+to+dec&gs_lp=Egxnd3Mtd2l6LXNlcnAaAhgCIh5jb252ZXJ0IGRlY2ltYWwgbWludXRlcyB0byBkZWMqAggAMggQABiKBRiRAjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHjIGEAAYFhgeMgYQABgWGB4yBhAAGBYYHki7KFAAWNUicAJ4AZABAZgBrwGgAcoUqgEEMjMuOLgBA8gBAPgBAagCFMICBxAjGIoFGCfCAgQQIxgnwgILEC4Y1AIYsQMYgATCAhEQLhiABBixAxiDARjHARjRA8ICCxAAGIAEGLEDGIMBwgIIEAAYgAQYsQPCAgcQABiKBRhDwgITEC4YigUY5QQYQxiLAxigAxioA8ICBxAjGOoCGCfCAhYQABgDGI8BGOUCGOoCGLQCGIwD2AEBwgIWEC4YAxiPARjlAhjqAhi0AhiMA9gBAcICERAuGIoFGMcBGK8BGI4FGJECwgIQEC4YxwEYsQMY0QMYigUYQ8ICChAAGIAEGBQYhwLCAgUQABiABMICCBAAGIoFGIYD4gMEGAAgQYgGAboGBggBEAEYCw&sclient=gws-wiz-serp#kpvalbx=_Qkw5ZcPtFeWmqtsPit6iwAE_45
+#https://learn.adafruit.com/adafruit-ultimate-gps?view=all
+
+
 def returnRelativeGoal(goalLong, goalLat, goalAlt, currLong, currLat, currAlt):
     #Longitude and Latitude needs to be given in decimal degrees
     KM_TO_CM = 100000
     M_TO_CM = 100
     LAT_TO_KM = 111.32
     EARTH_CIRCUMFERENCE_KM = 40075
-
 
     lat_cm = (goalLat - currLat) * LAT_TO_KM * KM_TO_CM
     
