@@ -15,6 +15,7 @@
 // and help support open source hardware & software! -ada
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <WiFiAP.h>
 #include <Adafruit_GPS.h>
 #include <HardwareSerial.h>
 
@@ -31,15 +32,17 @@ Adafruit_GPS GPS(&MySerial0);
 
 uint32_t timer = millis();
 
+const char *ssid = "XIAO_ESP32S3";
+const char *password = "password";
+WiFiServer server(80);
 
-const char* ssid = "GTother";
-const char* password = "GeorgeP@1927";
-
-WiFiServer server(25);
-boolean alreadyConnected = false;
 
 void setup()
 {
+  //while (!Serial);  // uncomment to have the sketch wait until Serial is ready
+
+  // connect at 115200 so we can read the GPS fast enough and echo without dropping chars
+  // also spit it out
   Serial.begin(115200);
   MySerial0.begin(9600, SERIAL_8N1, -1, -1);
   Serial.println("Adafruit GPS library basic parsing test!");
@@ -65,55 +68,35 @@ void setup()
   // Ask for firmware version
   GPSSerial.println(PMTK_Q_RELEASE);
 
-/***********************************
-************************************
-CONNECTING TO GT_OTHER
-************************************
-************************************/
+  pinMode(LED_BUILTIN, OUTPUT);
+  Serial.println();
+  Serial.println("Configuring access point...");
 
-    Serial.println("\nConnecting");
-    //delay(10000);
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-    while(WiFi.status() != WL_CONNECTED){
-        delay(500);
-        Serial.println("Not Connected");
-    }
+  // You can remove the password parameter if you want the AP to be open.
+  WiFi.softAP(ssid, password);
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  server.begin();
 
-    Serial.println("\nConnected to the WiFi network");
-    Serial.print("Local ESP32 IP: ");
-    Serial.println(WiFi.localIP());
-    server.begin();
+  Serial.println("Server started");
 }
 
 void loop() // run over and over again
 {
-  WiFiClient client = server.available();
-  if (client) {
-    if (!alreadyConnected) {
-        // clear out the input buffer:
-        client.flush();
-        Serial.println("We have a new client");
-        client.println("Hello, client!");
-        alreadyConnected = true;
-    }
-    // Serial.println(client.available());
-    // if (client.available() > 0) {
-    //   // read the bytes incoming from the client:
-    //   char thisChar = client.read();
-    //   // echo the bytes back to the client:
-    //   server.write(thisChar);
-    //   // echo the bytes to the server as well:
-    //   Serial.write(thisChar);
-    // }
-    String incomingData = "";  // A string to store incoming data
 
-    while (client.available()) {
-      Serial.println("connected and ready to send data");
-      //char thisChar = client.read();
-      //incomingData += thisChar;  // Add read byte to the string
+  WiFiClient client = server.available();   // listen for incoming clients
 
-            // read data from the GPS in the 'main loop'
+  if (client) {                             // if you get a client,
+    Serial.println("New Client.");           // print a message out the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    //client.println("HTTP/1.1 200 OK");
+    //client.println("Content-type:text/html");
+    //client.println();
+
+    while (client.connected()) {            // loop while the client's connected
+
+      // read data from the GPS in the 'main loop'
       char c = GPS.read();
       // if you want to debug, this is a good time to do it!
       if (GPSECHO)
@@ -129,7 +112,7 @@ void loop() // run over and over again
       }
 
       // approximately every 2 seconds or so, print out the current stats
-        client.print("\nTime: ");
+       /* client.print("\nTime: ");
         if (GPS.hour < 10) { client.print('0'); }
         client.print(GPS.hour, DEC); client.print(':');
         if (GPS.minute < 10) { client.print('0'); }
@@ -144,37 +127,32 @@ void loop() // run over and over again
         
         client.println(GPS.milliseconds);
 
-        client.print("<br>");
+       
         client.print("Date: ");
         client.print(GPS.day, DEC); client.print('/');
         client.print(GPS.month, DEC); client.print("/20");
-        client.println(GPS.year, DEC); client.print("<br>");
-        client.print("Fix: "); client.print((int)GPS.fix); client.print("<br>");
-        client.print(" quality: "); client.println((int)GPS.fixquality); client.print("<br>");
+        client.println(GPS.year, DEC); 
+        client.print("Fix: "); client.print((int)GPS.fix);
+        client.print(" quality: "); client.println((int)GPS.fixquality);*/
 
-        client.print("<br>");
+
+        // print format: "<fix int> <GPS latitude> <GPS longitude>"
+        // try to fix it so that it's once every 5 seconds 
+        client.print("Fix: "); client.print((int)GPS.fix);
         if (GPS.fix) {
-          client.print("Location: ");
+          client.print(" ");
           client.print(GPS.latitude, 4); client.print(GPS.lat);
-          client.print(", ");
-          client.print(GPS.longitude, 4); client.println(GPS.lon);client.print("<br>");
-          client.print("Speed (knots): "); client.println(GPS.speed);client.print("<br>");
-          client.print("Angle: "); client.println(GPS.angle);client.print("<br>");
-          client.print("Altitude: "); client.println(GPS.altitude);client.print("<br>");
-          client.print("Satellites: "); client.println((int)GPS.satellites);client.print("<br>");
-          client.print("Antenna status: "); client.println((int)GPS.antenna);client.print("<br>");
+          client.print(" ");
+          client.print(GPS.longitude, 4); client.println(GPS.lon);
+          /*client.print("Speed (knots): "); client.println(GPS.speed);
+          client.print("Angle: "); client.println(GPS.angle);
+          client.print("Altitude: "); client.println(GPS.altitude);
+          client.print("Satellites: "); client.println((int)GPS.satellites);
+          client.print("Antenna status: "); client.println((int)GPS.antenna);*/
         }
-        client.print("<br>");
       delay(1000);
     }
-
-    // // Optionally, echo the data back to the client
-    client.print(incomingData);
-
-    // Print the received data to the Serial Monitor
-    //Serial.println(incomingData);
-  } else {
-    //Serial.println("no client");
+    Serial.println("Client Disconnected");
   }
 
 }
