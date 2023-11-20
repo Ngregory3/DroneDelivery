@@ -53,7 +53,7 @@ def convertAltToDecimal(altString):
 #Create threads for parse GPS
 def parseGPS(active: threading.Event, curr_location: dict, location_lock: threading.Lock):
     # Arduino's IP and Port
-    SERVER_IP = '100.70.7.237'  # This is the IP of your Arduino.
+    SERVER_IP = '0.0.0.0'  # This is the IP of your Arduino.
     #Run clientServer and read:
     # Connecting
     # WL_IDLE_STATUS
@@ -67,29 +67,40 @@ def parseGPS(active: threading.Event, curr_location: dict, location_lock: thread
     # Create a socket object
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    s.bind((SERVER_IP, SERVER_PORT))
+
     # Connect to the Arduino
-    s.connect((SERVER_IP, SERVER_PORT))
+    #s.connect((SERVER_IP, SERVER_PORT))
 
     # Send a message to the Arduino (Optional)
-    s.sendall(b'Hello, Arduino!')
+    #s.sendall(b'Hello, Arduino!')
 
-    while active:
-        #data = repr(s.recv(1024))
-        data = s.recv(1024).decode('utf-8')
+    s.listen()
+    client_socket, client_address = s.accept()
 
-        threading.Event.wait(timeout=2)
+    while True:
+        data = client_socket.recv(1024).decode('utf-8')
+
+        #time.sleep(1)
+
         curr = str(data)
-        #if (curr == "start:"): continue
-        if (len(curr) < 8): continue
+        print(curr)
+        if (curr == "start:"): continue
+        #if (len(curr) < 7): continue
 
         try:
             curr_list = curr.split()
-            with location_lock:
-                curr_location["fix"] = curr_list[0]
-                curr_location["latitude"] = curr_list[1]
-                curr_location["longitude"] = curr_list[2]
-                curr_location["altitude"] = curr_list[3]
-        
+            myDict = {}
+
+            myDict["fix"] = curr_list[0]
+            myDict["latitude"] = curr_list[1]
+            myDict["longitude"] = curr_list[2]
+            myDict["altitude"] = curr_list[3]
+
+            if (len(myDict["fix"]) > 1): continue
+            
+            print(myDict)
+            
         except Exception as e:
             print("Package has error, keep going.")
             continue
@@ -138,6 +149,7 @@ def main():
             continue
         
         print("Valid user input given")
+        success = True
 
         '''
         print("Attempting to get coordinates from GPS")
@@ -157,9 +169,8 @@ def main():
             else:
                 threading.Event.wait(10)
             try_count -= 1
-        '''
 
-        
+        '''
         print("Getting fake current location")
         #Testing current location
         curr_lat = "0000.0000"
@@ -176,16 +187,16 @@ def main():
             print(curr_long)
             print(curr_alt)
             
-            relativeGoal = [3115, 3703, 264]#returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
+            relativeGoal = [1000, 0, 50]#returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
             print("Relative Goal: (x,y,z)")
             print(relativeGoal[0])
             print(relativeGoal[1])
             print(relativeGoal[2])
-
+            
             #Send information to Raspberry Pi through ssh
-            test_command = "python ~/Senior_Design/test_drone_connection.py"
+            test_command = "python ~/Senior_Design/djitelloTest.py"
             flight_command = "python ~/Senior_Design/flyToLocationPi.py {} {} {}".format(relativeGoal[0], relativeGoal[1], relativeGoal[2])
-            command = test_command
+            command = flight_command
             print("Command sent to py: " + command)
 
             stdin, stdout, stderr = ssh.exec_command(command)

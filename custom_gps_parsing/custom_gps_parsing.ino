@@ -114,17 +114,18 @@ void loop() // run over and over again
       if (GPSSerial.available()) {
         String str = GPSSerial.readStringUntil('\n');
         if (str) {
+          Serial.println(str);
           //Serial.println(str);
           char* c = (char*) str.c_str();
           char * header = strtok(c, del);
-          if (strcmp(header,"$GPGSA")==0 && false) {
+          if (strcmp(header,"$GPGSA")==0) {
             //Use this to check if we have fix
             char * mode = strtok(nullptr, del);
             char * fix = strtok(nullptr, del);
-            if (fix != "1" && !hasFix) {
+            if (strcmp(fix, "1") != 0 && !hasFix) {
               //There is a 2D (2) or 3D (3) fix
               hasFix = true;
-            } else if (fix == "1" && hasFix) {
+            } else if (strcmp(fix, "1") == 0 && hasFix) {
               hasFix = false;
             }
           } else if ((strcmp(header, "$GPGGA") == 0) && hasFix) {

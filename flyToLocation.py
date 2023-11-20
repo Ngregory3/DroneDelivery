@@ -73,8 +73,19 @@ def execute_funcs(drone: tello.Tello, func_list: list) -> bool:
         return True
     except Exception:
         return False
-
-        
+    
+def flyToLocation(x,y,z):
+    drone = tello.Tello()
+    drone.connect()
+    move_stack = generate_func_list(x,y,z)
+    drone.takeoff()
+    success = execute_funcs(drone, move_stack)
+    if not success:
+        print("Failed to execute path")
+    else:
+        drone.land()
+        print("Made it to desired location")
+    
 
 def main():
     print("running...")
