@@ -174,7 +174,7 @@ def main():
             print(curr_long)
             print(curr_alt)
             
-            relativeGoal = returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
+            relativeGoal = [3115, 3703, 264]#returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
             print("Relative Goal: (x,y,z)")
             print(relativeGoal[0])
             print(relativeGoal[1])
