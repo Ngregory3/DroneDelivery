@@ -1,5 +1,6 @@
 from djitellopy import tello
 import sys
+import time
 
 def generate_func_list(x, y, z) -> list:
     move_stack = []
@@ -73,6 +74,7 @@ def execute_funcs(drone: tello.Tello, func_list: list) -> bool:
                 drone.move_up(cm)
             elif dir == "d":
                 drone.move_down(cm)
+            time.sleep(10)
         return True
     except Exception:
         return False
