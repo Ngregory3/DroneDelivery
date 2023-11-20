@@ -4,6 +4,9 @@ import sys
 def generate_func_list(x, y, z) -> list:
     move_stack = []
     #For x:
+    x = int(x)
+    y = int(y)
+    z = int(z)
     if x > 0:
         max_func = x // 500
         leftover = x % 500
