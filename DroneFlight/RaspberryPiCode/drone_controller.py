@@ -125,6 +125,8 @@ def main():
         #Wait for user input
         print("GPS coordinate format: DDMM.SSSSS (D=degrees M=minutes S=seconds)")
         user_input = input("Enter GPS coordinates in the form Lat, Long, Alt\n")
+        if (user_input == "end"):
+            break
         gps_coords = user_input.split(',')
         print("Inputted goal destination: (lat, long, alt)")
         print(gps_coords[0])
