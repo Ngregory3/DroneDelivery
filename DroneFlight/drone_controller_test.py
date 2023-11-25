@@ -3,6 +3,7 @@ import socket
 import time
 import math
 import paramiko
+import random
 
 #The program to control all drone actions
 #Need to add failsafes for losing connection to Raspberry Pi, losing connectino to Xiao, and Raspberry Pi losing connection to Tello Wifi
@@ -48,6 +49,23 @@ def convertLongToDecimal(latString, east: bool):
 
 def convertAltToDecimal(altString):
     return float(altString)
+
+
+def fakeParse(active: threading.Event, curr_location: dict, location_lock: threading.Lock, end_program: threading.Event):
+    #Getting information from socket, we know this part works...
+    while True:
+        if end_program.is_set():
+            break
+        
+        if active.is_set():
+            with location_lock:
+                curr_location["fix"] = 1
+                curr_location["latitude"] = random.random() * 1000
+                curr_location["longitude"] = random.random() * 1000
+                curr_location["altitude"] = random.random() * 100
+        else:
+            active.wait()
+
 
 
 #Create threads for parse GPS
@@ -112,7 +130,8 @@ def main():
     #Event to control parse thread
     print("Beginning program")
     activeEvent = threading.Event()
-    activeEvent.set()
+    waitingEvent = threading.Event()
+    deathEvent = threading.Event()
 
     #Current location dictionary of drone and lock
     curr_location = {}
@@ -120,15 +139,16 @@ def main():
     location_mutex = threading.Lock()
 
     #Create and start parsing thread to get current GPS data
-    parse = threading.Thread(target=parseGPS, args=(activeEvent, curr_location, location_mutex))
+    parse = threading.Thread(target=fakeParse, args=(activeEvent, curr_location, location_mutex, deathEvent))
+    parse.start()
 
     #Create SSH connection to raspberry pi
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    pi_server = "192.100.1.1"
-    pi_username = "pi"
-    pi_password = "raspberry2"
-    ssh.connect(pi_server, username=pi_username, password=pi_password)
+    #ssh = paramiko.SSHClient()
+    #ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    #pi_server = "192.100.1.1"
+    #pi_username = "pi"
+    #pi_password = "raspberry2"
+    #ssh.connect(pi_server, username=pi_username, password=pi_password)
 
     print("Setup complete")
     
@@ -151,24 +171,24 @@ def main():
         print("Valid user input given")
         success = True
 
-        '''
         print("Attempting to get coordinates from GPS")
-        parse.start()
-        threading.Event.wait(10) #Pause to allow us to get GPS data
+        activeEvent.set()
+        waitingEvent.wait(timeout=10) #Pause to allow us to get GPS data
         try_count = 5
         success = False
         while try_count > 0:
             with location_mutex:
                 fix = curr_location["fix"]
-            if fix != 0:
-                curr_lat = curr_location["lattitude"]
-                curr_long = curr_location["longitude"]
-                curr_alt = curr_location["altitude"]
-                success = True
-                break
-            else:
-                threading.Event.wait(10)
+                if fix != 0:
+                    curr_lat = curr_location["latitude"]
+                    curr_long = curr_location["longitude"]
+                    curr_alt = curr_location["altitude"]
+                    success = True
+                    break
+                else:
+                    waitingEvent.wait(timeout=5)
             try_count -= 1
+        activeEvent.clear()
 
         '''
         print("Getting fake current location")
@@ -179,6 +199,7 @@ def main():
         success = True
         north = True
         east = True
+        '''
         
         
         if success:
@@ -193,10 +214,11 @@ def main():
             print(relativeGoal[1])
             print(relativeGoal[2])
             
+            '''
             #Send information to Raspberry Pi through ssh
             test_command = "python ~/Senior_Design/djitelloTest.py"
             flight_command = "python ~/Senior_Design/flyToLocationPi.py {} {} {}".format(relativeGoal[0], relativeGoal[1], relativeGoal[2])
-            command = flight_command
+            command = test_command
             print("Command sent to py: " + command)
 
             stdin, stdout, stderr = ssh.exec_command(command)
@@ -207,18 +229,19 @@ def main():
             stdin.close()
             stdout.close()
             stderr.close()
+            '''
             print("Done executing ssh function")
 
         else:
             print("Failed to get current GPS coordinates, waiting for new input")
-            activeEvent.clear()
-            parse.join()
-            activeEvent.set()
             continue
             
         print("Finished loop")
+    
+    deathEvent.set()
+    activeEvent.set()
+    parse.join()
             
-        
 main()
             
         
