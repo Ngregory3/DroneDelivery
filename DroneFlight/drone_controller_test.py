@@ -206,7 +206,7 @@ def main():
             print("Current location data: (lat, long, alt)")
             print(curr_lat)
             print(curr_long)
-            print(curr_alt)
+            print(curr_alt) 
             
             relativeGoal = [1000, 0, 50]#returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
             print("Relative Goal: (x,y,z)")
