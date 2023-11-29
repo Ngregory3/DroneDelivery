@@ -52,6 +52,14 @@ def convertLongToDecimal(latString, east: bool):
 def convertAltToDecimal(altString):
     return float(altString)
 
+def calculateAverage(stringList):
+    total = 0
+    for i in len(stringList):
+        total += float(stringList[i])
+    
+    avg = total / len(stringList)
+    return str(avg)
+
 
 #Create threads for parse GPS
 def parseGPS(active: threading.Event, curr_location: dict, location_lock: threading.Lock, end_program: threading.Event):
@@ -129,6 +137,32 @@ def main():
         user_input = input("Enter GPS coordinates in the form Lat, Long, Alt\n")
         if (user_input == "end"):
             break
+        if (user_input == "takeoff"):
+            command = "python ~/Senior_Design/takeoff.py"
+            stdin, stdout, stderr = ssh.exec_command(command)
+            stdout.channel.recv_exit_status()  #Blocks code and waits for exit status, meaning program as finished
+            print("Output from raspberry pi:")
+            for line in iter(stdout.readline, ""):
+                print(line, end="")
+            stdin.close()
+            stdout.close()
+            stderr.close()
+            print("Done executing takeoff ssh function")
+            continue
+        if (user_input == "land"):
+            command = "python ~/Senior_Design/land.py"
+            stdin, stdout, stderr = ssh.exec_command(command)
+            stdout.channel.recv_exit_status()  #Blocks code and waits for exit status, meaning program as finished
+            print("Output from raspberry pi:")
+            for line in iter(stdout.readline, ""):
+                print(line, end="")
+            stdin.close()
+            stdout.close()
+            stderr.close()
+            print("Done executing takeoff ssh function")
+            continue
+        
+        #Received coords and moving drone
         gps_coords = user_input.split(',')
         print("Inputted goal destination: (lat, long, alt)")
         print(gps_coords[0])
@@ -144,46 +178,41 @@ def main():
 
         print("Attempting to get coordinates from GPS")
         activeEvent.set()
-        waitingEvent.wait(timeout=10) #Pause to allow us to get GPS data
+        waitingEvent.wait(timeout=5) #Pause to allow us to get GPS data
         try_count = 5
         count = 0
         success = False
+        curr_lat = []
+        curr_long = []
+        curr_alt = []
         while try_count > 0:
             with location_mutex:
                 fix = curr_location["fix"]
                 if fix != 0:
-                    curr_lat = curr_location["latitude"]
-                    curr_long = curr_location["longitude"]
-                    curr_alt = curr_location["altitude"]
-                    success = True
-                    break
-            waitingEvent.wait(timeout=5)
+                    curr_lat.append(curr_location["latitude"])
+                    curr_long.append(curr_location["longitude"])
+                    curr_alt.append(curr_location["altitude"])
+            waitingEvent.wait(timeout=2)
             try_count -= 1
         activeEvent.clear()
 
-        '''
-        print("Getting fake current location")
-        #Testing current location
-        curr_lat = "0000.0000"
-        curr_long = "0000.0000"
-        curr_alt = "0000.0000"
-        success = True
-        north = True
-        east = True
-        '''
-        
+        success = len(curr_lat) > 0 and len(curr_long) > 0 and len(curr_alt) > 0
         
         if success:
+            curr_lat_avg = calculateAverage(curr_lat)
+            curr_long_avg = calculateAverage(curr_long)
+            curr_alt_avg = calculateAverage(curr_alt)
+
             print("Current location data: (lat, long, alt)")
-            print(curr_lat)
-            print(curr_long)
-            print(curr_alt)
+            print(curr_lat_avg)
+            print(curr_long_avg)
+            print(curr_alt_avg)
             
             #relativeGoal = [1000, 0, 50]
             east=True
             north=True
-            relativeGoal = returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
-            relativeGoal[2] = 0
+            relativeGoal = returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long_avg, east), convertLatToDecimal(curr_lat_avg, north), convertAltToDecimal(curr_alt_avg))
+            relativeGoal[2] = 0.0
             print("Relative Goal: (x,y,z)")
             print(relativeGoal[0])
             print(relativeGoal[1])
@@ -191,7 +220,7 @@ def main():
             
             #Send information to Raspberry Pi through ssh
             test_command = "python ~/Senior_Design/djitelloTest.py"
-            flight_command = "python ~/Senior_Design/flyToLocationPi.py {} {} {}".format(relativeGoal[0], relativeGoal[1], relativeGoal[2])
+            flight_command = "python ~/Senior_Design/flyToLocationPi2.py {} {} {}".format(relativeGoal[0], relativeGoal[1], relativeGoal[2])
             command = flight_command
             print("Command sent to py: " + command)
 
