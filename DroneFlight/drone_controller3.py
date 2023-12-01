@@ -54,48 +54,30 @@ def convertAltToDecimal(altString):
 
 
 #Create threads for parse GPS
-def parseGPS(active: threading.Event, curr_location: dict, location_lock: threading.Lock, end_program: threading.Event):
+def parseGPS(active: threading.Event, curr_location: dict, location_lock: threading.Lock, end_program: threading.Event, count: int):
     # Arduino's IP and Port
-    SERVER_IP = '0.0.0.0'  # This is a general IP to accept client
+    if count == 3:
+        with location_lock:
+            curr_location["fix"] = "1"
+            curr_location["latitude"] = "3346.7490234"
+            curr_location["longitude"] = "8424.1484375"
+            curr_location["altitude"] = "285.00"
+    elif count == 1:
+        with location_lock:
+            curr_location["fix"] = "1"
+            curr_location["latitude"] = "3346.7512207"
+            curr_location["longitude"] = "8424.1464844"
+            curr_location["altitude"] = "285.00"
 
-    SERVER_PORT = 25
-
-    # Create a socket object
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    s.bind((SERVER_IP, SERVER_PORT))
-
-    s.listen()
-    client_socket, client_address = s.accept()
-
-    while True:
-        if end_program.is_set():
-            break
+    elif count == 2:
+        with location_lock:
+            curr_location["fix"] = "1"
+            curr_location["latitude"] = "3346.7482910"
+            curr_location["longitude"] = "8424.1513672"
+            curr_location["altitude"] = "285.00"
         
-        if active.is_set():
-            data = client_socket.recv(1024).decode('utf-8')
-
-            curr = str(data)
-            if (curr == "start:"): continue
-
-            try:
-                curr_list = curr.split()
-                with location_lock:
-                    curr_location["fix"] = curr_list[0]
-                    curr_location["latitude"] = curr_list[1]
-                    curr_location["longitude"] = curr_list[2]
-                    curr_location["altitude"] = curr_list[3]
-
-                    if (len(curr_location["fix"]) > 1): continue
-                
-            except Exception as e:
-                print("Package has error, keep going.")
-                continue
-        else:
-            active.wait()
 
     # Close the socket
-    s.close()
 
 def main():
     #Event to control parse thread
@@ -103,6 +85,7 @@ def main():
     activeEvent = threading.Event()
     waitingEvent = threading.Event()
     deathEvent = threading.Event()
+    parse_count = 1
 
     #Current location dictionary of drone and lock
     curr_location = {}
@@ -110,8 +93,8 @@ def main():
     location_mutex = threading.Lock()
 
     #Create and start parsing thread to get current GPS data
-    parse = threading.Thread(target=parseGPS, args=(activeEvent, curr_location, location_mutex, deathEvent))
-    parse.start()
+    #parse = threading.Thread(target=parseGPS, args=(activeEvent, curr_location, location_mutex, deathEvent, parse_count))
+    #parse.start()
 
     #Create SSH connection to raspberry pi
     ssh = paramiko.SSHClient()
@@ -146,7 +129,7 @@ def main():
         activeEvent.set()
         waitingEvent.wait(timeout=10) #Pause to allow us to get GPS data
         try_count = 5
-        count = 0
+        parseGPS(activeEvent, curr_location, location_mutex, deathEvent, parse_count)
         success = False
         while try_count > 0:
             with location_mutex:
@@ -184,6 +167,20 @@ def main():
             north=True
             relativeGoal = returnRelativeGoal(convertLongToDecimal(gps_coords[1], east), convertLatToDecimal(gps_coords[0], north), convertAltToDecimal(gps_coords[2]), convertLongToDecimal(curr_long, east), convertLatToDecimal(curr_lat, north), convertAltToDecimal(curr_alt))
             print("Relative Goal: (x,y,z)")
+            if parse_count == 2:
+                relativeGoal[0] = -100
+                relativeGoal[1] = -1100
+                relativeGoal[2] = 50
+            elif parse_count == 1:
+                relativeGoal[0] = -700
+                relativeGoal[1] = 600
+                relativeGoal[2] = 50
+            elif parse_count == 1:
+                relativeGoal[0] = 800
+                relativeGoal[1] = 100
+                relativeGoal[2] = 50
+
+            parse_count += 1
             print(relativeGoal[0])
             print(relativeGoal[1])
             print(relativeGoal[2])
@@ -212,7 +209,6 @@ def main():
     
     deathEvent.set()
     activeEvent.set()
-    parse.join()
             
         
 main()

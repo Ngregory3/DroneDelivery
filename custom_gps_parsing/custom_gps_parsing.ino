@@ -43,7 +43,7 @@ uint32_t timer = millis();
 const char* ssid = "NathanielHotSpot";
 const char* password = "sjgd0234";
 
-const char* server_ip = "192.168.212.10";
+const char* server_ip = "192.168.166.10";
 const int server_port = 25;
 
 float latitude = 0.0;
@@ -155,8 +155,8 @@ void loop() // run over and over again
         }
       }
 
-      // approximately every 5 seconds or so, print out the current stats
-      if (millis() - timer > 5000) {
+      // approximately every 2 seconds or so, print out the current stats
+      if (millis() - timer > 2000) {
         timer = millis(); // reset the timer
         Serial.print("Client connected: ");
         Serial.println(client.connected());

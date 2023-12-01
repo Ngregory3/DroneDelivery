@@ -23,10 +23,11 @@ def fly_drone():
     drone.takeoff()
 
     #Move forward
-    drone.move("forward",100)
+    drone.move("forward",500)
     drone.move_back(30)
     drone.move_left(50)
     drone.move_right(50)
+    drone.move_up(20)
 
     #Get Height
     print("Height:")
@@ -36,15 +37,11 @@ def fly_drone():
     print("Distance:")
     print(drone.get_distance_tof())
 
-    drone.move_forward(500)
-    drone.move_forward(500)
-    drone.flip_back()
+    #drone.flip_back()
 
 
     #Land the drone
     drone.land()
-
-
 
     
 
@@ -74,5 +71,5 @@ def fly_away():
     drone.land()
 
 
-fly_drone()
-#get_data()
+#fly_drone()
+get_data()
