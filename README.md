@@ -10,4 +10,4 @@ The main code for the project is in the **Drone Flight** folder. This includes:
 
 Many testing scripts can be found within the **testing** folder. These are used to verify the connections between all parts of the infrastructure are working correctly.
 
-The **droneapp** folder contains version 1 of the application that would be used to interact with the system in order to order items via the drones.
+The **DroneApp** could be found at https://github.com/alexisAlexisLee/DroneApp. This is version 1 of the application that would be used to interact with the system in order to order items via the drones.
